@@ -38,7 +38,7 @@ ggplot (aes( x = supp, y = len), data = ToothGrowth) + geom_boxplot(aes(fill =su
 aggregate(ToothGrowth$len, by = list(ToothGrowth$supp), FUN = function(x) x= c(mean = round(mean(x),2), sd = round(sd(x),2)))
 ```
 
-From this graph, it seems like those who received Orange Juice have a higher mean tooth length (20.66) than those who received Ascorbic Acid (16.96). There is also less variablity in those reeciving Orange Juice than Ascorbic Acid.
+From this graph, it seems like those who received Orange Juice have a higher mean tooth length (20.66) than those who received Ascorbic Acid (16.96). There is also less variablity in those receiving Orange Juice than Ascorbic Acid.
 
 ```{r echo = FALSE}
 # Generating the plot of length and computing for mean and standard deviation per dose
