@@ -1,0 +1,158 @@
+---
+output: word_document
+---
+### Report on Effects of Vitamin C on Tooth Growth in Guinea Pigs
+
+```{r, echo = FALSE}
+library(knitr)
+library(ggplot2)
+```
+
+#### Introduction
+
+This is a course project for the Statistical Inference class. The goal of the project is to perform a basic inferential data analysis on the ToothGrowth data set in R. In this data set, the length of odontoblasts (teeth) were measured in each of 10 guinea pigs at each of three doses of Vitamin C (0.5, 1 and 2 mg) with each of two supplements (Orange Juice or Ascorbic Acid).
+
+#### Preliminaries: Exploratory Data Analysis
+
+The dataset is loaded and preliminary analysis is done to explore the behaviour of the data. First, we look at the structure of the data set: 
+
+```{r}
+# Loading Data in R and doing preliminary check on dataset
+data(ToothGrowth)
+str(ToothGrowth)
+```
+
+We can see that we have 60 observations and 3 variables: len (lenght of teeth), supp (type of supplement) and dose (amount of dosage). We notice that the variable dose is treated as numerical so we convert this to factor. Afterwhich, we look at the preliminary summary statistics:
+
+```{r}
+# Renaming dose and making it as factor and checking the summary statistics
+ToothGrowth$dose = factor(ToothGrowth$dose, levels=c(0.5,1.0,2.0), labels=c("low","med","high"))
+summary(ToothGrowth)
+```
+
+Now that factors have been incorporated, we construct plots to visually inspect the behavior of the data and then generate some summary statistics of mean and sd to complement the graphs with numeric information.
+
+```{r echo = FALSE}
+# Generating the plot of length and computing for mean and standard deviation per type of supplement
+ggplot (aes( x = supp, y = len), data = ToothGrowth) + geom_boxplot(aes(fill =supp))
+aggregate(ToothGrowth$len, by = list(ToothGrowth$supp), FUN = function(x) x= c(mean = round(mean(x),2), sd = round(sd(x),2)))
+```
+
+From this graph, it seems like those who received Orange Juice have a higher mean tooth length (20.66) than those who received Ascorbic Acid (16.96). There is also less variablity in those reeciving Orange Juice than Ascorbic Acid.
+
+```{r echo = FALSE}
+# Generating the plot of length and computing for mean and standard deviation per dose
+ggplot (aes( x = dose, y = len), data = ToothGrowth) + geom_boxplot(aes(fill =dose))
+aggregate(ToothGrowth$len, by = list(ToothGrowth$dose), FUN = function(x) x= c(mean = round(mean(x),2), sd = round(sd(x),2)))
+```
+
+This graph reveals that the higher the dose administered seems to have a higher effect on the mean tooth length.
+
+```{r echo = FALSE}
+# Generating the plot of length and computing for the mean and sd per type of supplement in conjuction with dose
+coplot(len ~ dose | supp, data = ToothGrowth, panel = panel.smooth, xlab = "Tooth Growth: Length versus Dose for type of supplement")
+aggregate(ToothGrowth$len, by = list(ToothGrowth$supp, ToothGrowth$dose), FUN = function(x) x= c(mean = round(mean(x),2), sd = round(sd(x),2)))
+```
+
+The coplot suggests that administering Orange Juice in low and medium doses have higher mean length than those administered with Ascorbic Acid. For high dose though, it seems that the mean length for both type of supplements are the same.
+
+Based on the observations we noted above, we want to answer the following questions:
+
+1. Is the mean length for those administered with Orange Juice greater than those administered with Ascorbic Acid?
+
+2. Is the mean length for those given low dose lesser than those given with medium/high dose? Is the mean length for those given medium dose lesser than those given with high dose?
+
+3. Are the mean lengths of those given with Orange Juice at low and medium doses higher than those given with Ascorbic Acid? At high dose, are the mean length for both type of supplements the same?
+
+To answer the questions, we now take formal tests and perform t-test analysis to determine the difference in means of the length based on the factors.
+
+#### T-test for Mean Difference by Type of Supplement
+
+To determine whether the mean tooth length for those given with Orange Juice is higher than those given with ascorbic, we test:
+$H_0: \mu_{OJ} = \mu_{VC}$ versus $H_a: \mu_{OJ} > \mu_{VC}$.
+
+```{r echo = FALSE}
+# Testing for mean difference by supplement type
+t.test( len ~ supp, alternative = "greater", data = ToothGrowth)
+```
+
+The results above show that at 5% level of significance, there is statistical significant difference between the mean length of those given Orange Juice (20.66) than Ascorbic Acid (16.96) with t = 1.91 and since p-value (0.03) is less than 0.05, we reject the null hypothesis.
+
+#### T-test for Mean Difference by Level of Dose
+
+To examine the mean tooth length by dose, we subset the data into smaller sets according to the combination of dosage sets.
+
+```{r}
+# Splitting the data for dosage pairs
+dLowMed <- subset(ToothGrowth, dose %in% c("low", "med"))
+dLowHigh <- subset(ToothGrowth, dose %in% c("low", "high"))
+dMedHigh <- subset(ToothGrowth, dose %in% c("med", "high"))
+```
+
+We then perform t-test on the following: 
+
+i.   $H_0: \mu_{low} = \mu_{med}$ versus $H_a: \mu_{low} < \mu_{med}$.
+```{r echo = FALSE}
+# Testing for mean difference by dose
+t.test( len ~ dose, alternative = "less", data = dLowMed)
+```
+
+ii.  $H_0: \mu_{low} = \mu_{high}$ versus $H_a: \mu_{low} < \mu_{high}$.
+```{r echo = FALSE}
+# Testing for mean difference by dose
+t.test( len ~ dose, alternative = "less", data = dLowHigh)
+```
+
+iii. $H_0: \mu_{med} = \mu_{high}$ versus $H_a: \mu_{med} < \mu_{high}$.
+```{r echo = FALSE}
+# Testing for mean difference by dose
+t.test( len ~ dose, alternative = "less", data = dMedHigh)
+```
+
+All the results above indicate that at 5% level of significance, the mean tooth length are all significantly different for each of the dosage pairs (low vs med, low vs high and med vs high). With all three p-values being very small, we reject all null hypotheses that the mean differences by dose are equal to 0.
+
+#### T-test for Mean Difference of Type of Supplement by Level of Dose
+
+To test the mean differnce of the type of suplement for each dosage type, we first subset the data by level of dose. 
+```{r}
+#Splitting the data by dose
+dLow <- subset(ToothGrowth, dose == "low")
+dMed <- subset(ToothGrowth, dose == "med")
+dHigh <- subset(ToothGrowth, dose == "high")
+```
+
+Then we coduct the t-test on the following:
+
+i.   $H_0: \mu_{OJ|low} = \mu_{VC|low}$ versus $H_a: \mu_{OJ|low} > \mu_{VC|low}$.
+```{r echo = FALSE}
+# Testing for mean difference of type of supplement by dose
+t.test( len ~ supp, alternative = "greater", data = dLow)
+```
+
+ii.  $H_0: \mu_{OJ | med} = \mu_{VC|med}$ versus $H_a: \mu_{OJ|med} > \mu_{VC|med}$.
+```{r echo = FALSE}
+# Testing for mean difference of type of supplement by dose
+t.test( len ~ supp, alternative = "greater", data = dMed)
+```
+
+iii. $H_0: \mu_{OJ | high} = \mu_{VC|high}$ versus $H_a: \mu_{OJ|high} <> \mu_{VC|high}$.
+```{r echo = FALSE}
+# Testing for mean difference of type of supplement by dose
+t.test( len ~ supp, data = dHigh)
+```
+
+Looking at the t-statistics. p-value and confidence intervals generate from the tests above, we can say see that at 5% level of significance, the first two tests involving low and medium doses have statistical differences in the mean length for those given with Orange Juice and Ascorbic Acid. With very small p-values, we reject the null hypothesis. However, for the test involving high dose, with t = -0.05 and p-value at 0.96, we do not reject the null hypothesis. Moreover, the confidence interval contains 0, further telling that there is no difference in the mean length between both sypplement type for this dose level.
+
+#### Conclusions
+
+Results of the t-tests done for this project leads us to the following conclusions:
+
+1.) Rejecting the null hypothesis in testing the mean difference by type of supplement suggests that those given with Orange Juice tend to have higher mean tooth length than those given with Ascorbic Acid, unaccounting for other factors.
+
+2.) Rejecting all null hypotheses in testing the mean difference by dose suggests that the higher the dose given, the higher the mean length of tooth in guinea pigs will be.
+
+3.) Rejecting the null hypothesis in testing the mean difference for type of supplement in the low and medium doses suggest that in giving 0.5 mg and 1 mg doses of vitamins, Orange Juice have a higher effect on the mean tooth length than Ascorbic Acid. However, when giving 2mg dose, Orange Juice and Ascorbic Acid have the same effect on the mean tooth length.
+
+#### Assumptions
+
+We assume that the dosage and type of supplement were randomily given to the 60 test animals and that the sample are representative of the population of guinea pigs. We also assumed that the variances between the groups being tested are not equal.
